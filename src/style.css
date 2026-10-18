@@ -1,0 +1,460 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #09090b;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+}
+
+button { -webkit-tap-highlight-color: transparent; }
+button:focus-visible { outline: 2px solid #c4dcff; outline-offset: 4px; }
+
+.wallpaper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  isolation: isolate;
+  background: #09090b;
+}
+
+.wallpaper__image {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  opacity: 0;
+  transition: opacity 1.2s ease-in-out;
+}
+
+.wallpaper__image.is-active {
+  opacity: 1;
+}
+
+.wallpaper::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: auto 0 0;
+  height: max(14rem, 30vh);
+  background: linear-gradient(to top, rgb(0 0 0 / 68%), rgb(0 0 0 / 28%) 45%, transparent);
+  pointer-events: none;
+}
+
+.clock {
+  position: absolute;
+  z-index: 1;
+  top: clamp(1.5rem, 5vh, 3rem);
+  left: clamp(1.5rem, 5vw, 3rem);
+  color: rgb(255 255 255 / 75%);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 750;
+  letter-spacing: -0.085em;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-shadow: 0 3px 32px rgb(0 0 0 / 22%);
+  pointer-events: none;
+  user-select: none;
+  animation: soft-reveal 800ms ease both;
+}
+
+.clock__day {
+  display: block;
+  margin-top: 0.65rem;
+  font-size: clamp(0.9rem, 1.5vw, 1.15rem);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.photo-widget {
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  position: absolute;
+  z-index: 2;
+  top: clamp(1.5rem, 5vh, 3rem);
+  right: clamp(1.5rem, 4vw, 2.5rem);
+  width: 15rem;
+  height: 11.25rem;
+  border-radius: 1rem;
+  box-shadow: 0 12px 36px rgb(0 0 0 / 22%);
+  animation: soft-reveal 350ms ease;
+  transition: box-shadow 220ms ease, outline-color 180ms ease;
+}
+
+.photo-widget:hover { box-shadow: 0 16px 42px rgb(0 0 0 / 30%); }
+.photo-widget.is-interacting { box-shadow: 0 24px 60px rgb(0 0 0 / 40%); }
+.photo-widget.is-removing { animation: soft-dismiss 180ms ease both; pointer-events: none; }
+
+.photo-widget:active { cursor: grabbing; }
+
+.photo-menu__divider {
+  height: 1px;
+  margin: 0.2rem 0.4rem;
+  background: rgb(255 255 255 / 14%);
+}
+
+.photo-menu > .photo-menu__remove { color: #ff9999; }
+
+.photo-widget.is-resizable {
+  outline: 2px solid rgb(255 255 255 / 85%);
+  outline-offset: 4px;
+}
+
+.photo-widget__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  pointer-events: none;
+  animation: soft-reveal 400ms ease;
+}
+
+.photo-widget__grip {
+  position: absolute;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+  touch-action: none;
+  user-select: none;
+  animation: soft-reveal 200ms ease;
+}
+
+.photo-widget__grip::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 5px rgb(0 0 0 / 35%);
+  transition: scale 160ms ease;
+}
+
+.photo-widget__grip:hover::after { scale: 1.25; }
+.photo-widget__grip--n { top: -17px; left: calc(50% - 12px); cursor: ns-resize; }
+.photo-widget__grip--s { bottom: -17px; left: calc(50% - 12px); cursor: ns-resize; }
+.photo-widget__grip--e { right: -17px; top: calc(50% - 12px); cursor: ew-resize; }
+.photo-widget__grip--w { left: -17px; top: calc(50% - 12px); cursor: ew-resize; }
+.photo-widget__grip--nw { left: -14px; top: -14px; cursor: nwse-resize; }
+.photo-widget__grip--ne { right: -14px; top: -14px; cursor: nesw-resize; }
+.photo-widget__grip--se { right: -14px; bottom: -14px; cursor: nwse-resize; }
+.photo-widget__grip--sw { left: -14px; bottom: -14px; cursor: nesw-resize; }
+
+.photo-widget__grip--n::after,
+.photo-widget__grip--s::after { inset: 10px 2px; border-radius: 4px; }
+.photo-widget__grip--e::after,
+.photo-widget__grip--w::after { inset: 2px 10px; border-radius: 4px; }
+
+.photo-widget__done {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 999px;
+  background: rgb(30 30 35 / 65%);
+  color: white;
+  font: 600 0.8rem -apple-system, BlinkMacSystemFont, sans-serif;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 15%);
+  backdrop-filter: blur(16px);
+  cursor: pointer;
+  transition: background 180ms ease, scale 180ms ease;
+}
+
+.photo-widget__done:hover {
+  background: rgb(65 65 70 / 80%);
+}
+.photo-widget__done:active { scale: 0.95; }
+
+.photo-menu {
+  position: fixed;
+  z-index: 5;
+  display: grid;
+  min-width: 10rem;
+  gap: 0.2rem;
+  padding: 0.35rem;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 0.75rem;
+  background: rgb(28 28 32 / 88%);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 35%);
+  backdrop-filter: blur(18px);
+  transform-origin: top left;
+  animation: menu-reveal 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.photo-menu > button {
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: white;
+  text-align: left;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.photo-menu > button:hover,
+.photo-menu > button:focus-visible {
+  outline: none;
+  background: rgb(255 255 255 / 14%);
+}
+
+.wallpaper-indicators {
+  position: absolute;
+  z-index: 2;
+  right: clamp(1.5rem, 4vw, 2.5rem);
+  bottom: clamp(1.5rem, 4vh, 2.5rem);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.quote {
+  position: absolute;
+  z-index: 2;
+  right: 8rem;
+  bottom: clamp(1.5rem, 4vh, 2.5rem);
+  left: clamp(1.5rem, 4vw, 2.5rem);
+  margin: 0;
+  color: white;
+  text-align: left;
+  text-shadow: 0 2px 16px rgb(0 0 0 / 55%);
+  animation: quote-appear 700ms ease both;
+  pointer-events: none;
+}
+
+.quote blockquote {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+  font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.quote figcaption {
+  margin-top: 0.35rem;
+  font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+@keyframes quote-appear {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.image-picker {
+  width: min(1080px, calc(100vw - 3rem));
+  min-height: min(700px, 85dvh);
+  max-height: 85dvh;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 1.5rem;
+  background: rgb(28 28 32 / 92%);
+  color: white;
+  box-shadow: 0 24px 100px rgb(0 0 0 / 45%);
+  backdrop-filter: blur(28px);
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff30 transparent;
+  overscroll-behavior: contain;
+  animation: gallery-reveal 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.image-picker::backdrop {
+  background: rgb(0 0 0 / 45%);
+  backdrop-filter: blur(8px);
+  animation: soft-reveal 250ms ease both;
+}
+
+.image-picker.is-closing { animation: gallery-dismiss 180ms ease both; pointer-events: none; }
+.image-picker.is-closing::backdrop { animation: soft-dismiss 180ms ease both; }
+.image-picker__item { animation: tile-reveal 350ms ease var(--item-delay, 0ms) both; }
+.image-picker__close,
+.image-picker__delete,
+.image-picker__confirmation button { transition: background 160ms ease, color 160ms ease, scale 160ms ease; }
+.image-picker__close:hover { background: rgb(255 255 255 / 20%); }
+.image-picker__close:active,
+.image-picker__delete:active,
+.image-picker__confirmation button:active { scale: 0.93; }
+.image-picker__confirmation { animation: tile-reveal 200ms ease both; }
+.image-picker__check { animation: check-reveal 220ms cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+
+@keyframes soft-reveal { from { opacity: 0; } to { opacity: 1; } }
+@keyframes soft-dismiss { from { opacity: 1; } to { opacity: 0; } }
+@keyframes menu-reveal { from { opacity: 0; transform: translateY(-4px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes gallery-reveal { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes gallery-dismiss { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(8px) scale(0.98); } }
+@keyframes tile-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes check-reveal { from { opacity: 0; scale: 0.6; } to { opacity: 1; scale: 1; } }
+
+.image-picker__content { padding: clamp(1rem, 4vw, 1.75rem); }
+.image-picker__header { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.image-picker h2 { margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.03em; }
+.image-picker p { margin: 0.5rem 0 0; font-size: 0.85rem; color: rgb(255 255 255 / 55%); }
+.image-picker__close {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 10%);
+  color: white;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.image-picker__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 1rem; }
+.image-picker__item { position: relative; min-width: 0; }
+.image-picker__item .image-picker__photo { width: 100%; display: block; }
+.image-picker__upload {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed rgb(255 255 255 / 28%);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 4%);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+.image-picker__upload:hover, .is-dragging .image-picker__upload { background: rgb(255 255 255 / 10%); border-color: white; }
+.image-picker__upload-icon { font-size: 1.15rem; }
+.image-picker__upload > span:last-child { font-size: 0.8rem; opacity: 0.55; }
+.image-picker__delete {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 0;
+  border-radius: 50%;
+  background: #252529;
+  color: white;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease, background 160ms ease, color 160ms ease, scale 160ms ease;
+}
+.image-picker__delete svg { width: 22px; height: 22px; }
+.image-picker__item:hover .image-picker__delete,
+.image-picker__item:focus-within .image-picker__delete {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: none) {
+  .image-picker__delete { opacity: 1; pointer-events: auto; }
+}
+.image-picker__delete:hover { color: #ffaaaa; background: #50191e; }
+.image-picker .image-picker__error { color: #ffaaaa; margin-bottom: 1rem; }
+.image-picker__confirmation { position: sticky; bottom: 0; margin-top: 1rem; padding: 1rem; background: #323237; border: 1px solid #666; border-radius: 1rem; box-shadow: 0 8px 40px #0008; }
+.image-picker__confirmation div { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+.image-picker__confirmation button { padding: 0.5rem 0.9rem; border: 0; border-radius: 0.6rem; background: #55555c; color: white; cursor: pointer; }
+.image-picker__confirmation button:last-child { background: #963a44; }
+.image-picker button:disabled { opacity: 0.5; cursor: wait; }
+.photo-widget__empty { display: grid; place-items: center; height: 100%; border-radius: inherit; background: #27272c; color: #fff9; font: 0.85rem sans-serif; }
+.image-picker__photo {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0.85rem;
+  background: #161619;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.image-picker__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.image-picker__photo:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgb(0 0 0 / 30%); }
+.image-picker__photo[aria-pressed="true"] { outline: 2px solid white; outline-offset: 3px; }
+.image-picker button:focus-visible { outline: 2px solid #a8caff; outline-offset: 3px; }
+.image-picker__check {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: white;
+  color: #222;
+  font-size: 0.85rem;
+}
+
+.wallpaper-indicator {
+  position: relative;
+  width: 0.45rem;
+  height: 0.45rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 55%);
+  cursor: pointer;
+  transition: width 350ms ease, background-color 350ms ease;
+}
+
+.wallpaper-indicator.is-active {
+  width: 1.35rem;
+  background: white;
+}
+
+.wallpaper-indicator:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
+}
+
+.wallpaper-indicator::before { content: ''; position: absolute; inset: -9px -3px; }
+.wallpaper-indicator:hover { background: white; }
+
+@media (max-width: 540px) {
+  .image-picker { width: calc(100vw - 1rem); border-radius: 1.15rem; }
+  .image-picker__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+  .image-picker__upload > span:last-child { font-size: 0.7rem; }
+  .quote { right: 5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .wallpaper__image {
+    transition: none;
+  }
+
+  .wallpaper-indicator {
+    transition: none;
+  }
+
+  .quote {
+    animation: none;
+  }
+}
