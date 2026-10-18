@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import PhotoWidget from './PhotoWidget.jsx'
+import ImagePicker from './ImagePicker.jsx'
 import { galleryStorage } from './galleryStorage.js'
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
@@ -41,7 +42,7 @@ function restoreLayout() {
         },
       }
     })
-    return { current: Math.max(0, wallpapers.indexOf(imageFiles[saved.wallpaper])), widgets }
+    return { current: saved.wallpaper?.startsWith('upload:') ? saved.wallpaper : imageFiles[saved.wallpaper] ?? wallpapers[0], widgets }
   } catch {
     return null
   }
@@ -62,7 +63,8 @@ function createWidget(index = 0) {
 
 export default function App() {
   const [initialLayout] = useState(restoreLayout)
-  const [current, setCurrent] = useState(() => initialLayout?.current ?? 0)
+  const [current, setCurrent] = useState(() => initialLayout?.current ?? wallpapers[0])
+  const [choosingWallpaper, setChoosingWallpaper] = useState(false)
   const [widgets, setWidgets] = useState(() => initialLayout?.widgets ?? [createWidget()])
   const [now, setNow] = useState(() => new Date())
   const [menu, setMenu] = useState(null)
@@ -73,6 +75,8 @@ export default function App() {
     ...wallpapers.map((src) => ({ id: src, src, name: Object.keys(imageFiles).find((key) => imageFiles[key] === src)?.split('/').pop() })),
     ...gallery.uploads,
   ].filter((image) => !gallery.hidden.includes(imageKey(image.id)))
+  const wallpaperSrc = galleryImages.find((image) => image.id === current)?.src ?? (current?.startsWith('upload:') ? undefined : current)
+  const quote = quotes[Math.max(0, wallpapers.indexOf(current)) % quotes.length]
 
   useEffect(() => {
     let active = true
@@ -107,6 +111,7 @@ export default function App() {
       hidden: id.startsWith('upload:') ? gallery.hidden : [...gallery.hidden, imageKey(id)],
     })
     const replacement = galleryImages.find((image) => image.id !== id)?.id ?? null
+    if (current === id) setCurrent(replacement)
     setWidgets((items) => items.map((item) => item.image === id ? { ...item, image: replacement } : item))
   }
 
@@ -115,7 +120,7 @@ export default function App() {
       try {
         localStorage.setItem(storageKey, JSON.stringify({
           version: 1,
-          wallpaper: imageKey(wallpapers[current]),
+          wallpaper: imageKey(current),
           widgets: widgets.map((widget) => ({ ...widget, image: imageKey(widget.image) })),
         }))
       } catch {
@@ -144,9 +149,6 @@ export default function App() {
     function handleKeyDown(event) {
       if (document.querySelector('dialog[open]')) return
       if (event.key === 'Escape') setMenu(null)
-      if (!wallpapers.length) return
-      if (event.key === 'ArrowRight') setCurrent((index) => (index + 1) % wallpapers.length)
-      if (event.key === 'ArrowLeft') setCurrent((index) => (index - 1 + wallpapers.length) % wallpapers.length)
     }
     function dismiss() { setMenu(null) }
     window.addEventListener('keydown', handleKeyDown)
@@ -165,13 +167,11 @@ export default function App() {
         event.preventDefault()
         setMenu({
           x: Math.max(8, Math.min(event.clientX, window.innerWidth - 200)),
-          y: Math.max(8, Math.min(event.clientY, window.innerHeight - 60)),
+          y: Math.max(8, Math.min(event.clientY, window.innerHeight - 110)),
         })
       }}
     >
-      {wallpapers.map((image, index) => (
-        <div aria-hidden="true" className={`wallpaper__image${current === index ? ' is-active' : ''}`} key={image} style={{ backgroundImage: `url("${image}")` }} />
-      ))}
+      {wallpaperSrc && <div aria-hidden="true" className="wallpaper__image is-active" key={current} style={{ backgroundImage: `url("${wallpaperSrc}")` }} />}
       <time className="clock" dateTime={now.toISOString()}>
         {timeFormatter.format(now)}
         <span className="clock__day">{dayFormatter.format(now)}</span>
@@ -196,19 +196,25 @@ export default function App() {
       ))}
       {menu && (
         <div className="photo-menu" role="menu" style={{ left: menu.x, top: menu.y, zIndex: widgets.length + 10 }} onPointerDown={(event) => event.stopPropagation()}>
+          <button role="menuitem" type="button" onClick={() => { setMenu(null); setChoosingWallpaper(true) }}>Choose wallpaper…</button>
           <button role="menuitem" type="button" onClick={addWidget}>Add photo widget</button>
         </div>
       )}
       <figure className="quote" key={current}>
-        <blockquote>“{quotes[current % quotes.length].text}”</blockquote>
-        <figcaption>— {quotes[current % quotes.length].author}</figcaption>
+        <blockquote>“{quote.text}”</blockquote>
+        <figcaption>— {quote.author}</figcaption>
       </figure>
-      {wallpapers.length > 1 && (
-        <nav className="wallpaper-indicators" aria-label="Choose wallpaper">
-          {wallpapers.map((image, index) => (
-            <button aria-label={`Show wallpaper ${index + 1}`} aria-current={current === index ? 'true' : undefined} className={`wallpaper-indicator${current === index ? ' is-active' : ''}`} key={image} onClick={() => setCurrent(index)} type="button" />
-          ))}
-        </nav>
+      {choosingWallpaper && (
+        <ImagePicker
+          images={galleryImages}
+          selected={current}
+          ready={galleryReady}
+          storageError={galleryError}
+          onUpload={uploadImages}
+          onDelete={deleteImage}
+          onSelect={(image) => { setCurrent(image); setChoosingWallpaper(false) }}
+          onClose={() => setChoosingWallpaper(false)}
+        />
       )}
     </main>
   )
