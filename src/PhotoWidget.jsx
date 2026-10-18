@@ -1,13 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
 import ImagePicker from './ImagePicker.jsx'
+import LoadingImage from './LoadingImage.jsx'
 
-export default function PhotoWidget({ image, imageSrc, images, galleryReady, galleryError, onUpload, onDeleteImage, bounds, onChange, onAdd, onRemove, onActivate, layer }) {
+export default function PhotoWidget({ image, imageSrc, images, galleryReady, galleryError, onUpload, onDeleteImage, placement, onChange, onAdd, onRemove, onActivate, layer }) {
   const [editing, setEditing] = useState(false)
   const [menu, setMenu] = useState(null)
   const gesture = useRef(null)
   const [choosingImage, setChoosingImage] = useState(false)
   const [interacting, setInteracting] = useState(false)
   const [removing, setRemoving] = useState(false)
+
+  useEffect(() => {
+    function stopOnResize() {
+      gesture.current = null
+      setInteracting(false)
+      setMenu(null)
+    }
+    window.addEventListener('resize', stopOnResize)
+    return () => window.removeEventListener('resize', stopOnResize)
+  }, [])
 
   useEffect(() => {
     if (!removing) return
@@ -34,6 +45,8 @@ export default function PhotoWidget({ image, imageSrc, images, galleryReady, gal
     event.stopPropagation()
     onActivate()
     setInteracting(true)
+    const rect = event.currentTarget.closest('.photo-widget').getBoundingClientRect()
+    const bounds = { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
     gesture.current = { direction, bounds, x: event.clientX, y: event.clientY }
     event.currentTarget.setPointerCapture(event.pointerId)
   }
@@ -65,7 +78,7 @@ export default function PhotoWidget({ image, imageSrc, images, galleryReady, gal
     <aside
       className={`photo-widget${editing ? ' is-resizable' : ''}${interacting ? ' is-interacting' : ''}${removing ? ' is-removing' : ''}`}
       aria-label="Photo widget"
-      style={{ ...bounds, right: 'auto', zIndex: layer }}
+      style={{ ...placement, right: 'auto', zIndex: layer }}
       onPointerDown={start}
       onPointerMove={move}
       onPointerUp={() => { gesture.current = null; setInteracting(false) }}
@@ -81,7 +94,13 @@ export default function PhotoWidget({ image, imageSrc, images, galleryReady, gal
         })
       }}
     >
-      {imageSrc ? <img key={imageSrc} alt="Selected widget photo" className="photo-widget__photo" src={imageSrc} draggable="false" /> : <span className="photo-widget__empty">Choose a photo</span>}
+      {imageSrc ? (
+        <LoadingImage key={imageSrc} alt="Selected widget photo" className="photo-widget__photo" src={imageSrc} />
+      ) : !galleryReady && image?.startsWith('upload:') ? (
+        <span className="skeleton photo-widget__photo" aria-label="Loading photo" />
+      ) : (
+        <button className="photo-widget__empty" type="button" onPointerDown={(event) => event.stopPropagation()} onClick={() => setChoosingImage(true)}>Choose photo</button>
+      )}
       {editing && (
         <>
           {['n', 'e', 's', 'w', 'nw', 'ne', 'se', 'sw'].map((direction) => (

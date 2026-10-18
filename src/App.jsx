@@ -3,6 +3,8 @@ import PhotoWidget from './PhotoWidget.jsx'
 import ImagePicker from './ImagePicker.jsx'
 import { galleryStorage } from './galleryStorage.js'
 import { chooseQuote, rememberQuote } from './quotes.js'
+import LoadingImage from './LoadingImage.jsx'
+import { fitBounds, getViewport, isViewport, widgetStyle } from './layout.js'
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
 const dayFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'long' })
@@ -14,6 +16,7 @@ const imageFiles = import.meta.glob('../images/*.{png,jpg,jpeg,webp,avif}', {
 const wallpapers = Object.values(imageFiles)
 const storageKey = 'newtab-layout-v1'
 const imageKey = (image) => Object.keys(imageFiles).find((key) => imageFiles[key] === image) ?? image
+const restoreImage = (image) => image === null ? null : typeof image === 'string' && image.startsWith('upload:') ? image : imageFiles[image] ?? wallpapers[0] ?? null
 
 function restoreLayout() {
   try {
@@ -25,20 +28,14 @@ function restoreLayout() {
       ids.add(widget.id)
       return widget.bounds && ['left', 'top', 'width', 'height'].every((key) => Number.isFinite(widget.bounds[key]))
     }).map((widget) => {
-      const width = Math.max(128, Math.min(widget.bounds.width, window.innerWidth - 32))
-      const height = Math.max(96, Math.min(widget.bounds.height, window.innerHeight - 32))
       return {
         id: widget.id,
-        image: widget.image === null ? null : widget.image?.startsWith('upload:') ? widget.image : imageFiles[widget.image] ?? wallpapers[0],
-        bounds: {
-          width,
-          height,
-          left: Math.max(16, Math.min(widget.bounds.left, window.innerWidth - width - 16)),
-          top: Math.max(16, Math.min(widget.bounds.top, window.innerHeight - height - 16)),
-        },
+        image: restoreImage(widget.image),
+        bounds: isViewport(widget.viewport) ? widget.bounds : fitBounds(widget.bounds),
+        viewport: isViewport(widget.viewport) ? widget.viewport : getViewport(),
       }
     })
-    return { current: saved.wallpaper?.startsWith('upload:') ? saved.wallpaper : imageFiles[saved.wallpaper] ?? wallpapers[0], widgets }
+    return { current: restoreImage(saved.wallpaper), widgets }
   } catch {
     return null
   }
@@ -47,20 +44,21 @@ function restoreLayout() {
 function createWidget(index = 0) {
   return {
     id: crypto.randomUUID(),
-    image: wallpapers[index % wallpapers.length],
-    bounds: {
+    image: wallpapers[index % wallpapers.length] ?? null,
+    viewport: getViewport(),
+    bounds: fitBounds({
       width: 240,
       height: 180,
       left: Math.max(16, window.innerWidth - 280 - (index % 5) * 32),
       top: Math.min(48 + (index % 5) * 40, Math.max(16, window.innerHeight - 196)),
-    },
+    }),
   }
 }
 
 export default function App() {
   const [quote] = useState(chooseQuote)
   const [initialLayout] = useState(restoreLayout)
-  const [current, setCurrent] = useState(() => initialLayout?.current ?? wallpapers[0])
+  const [current, setCurrent] = useState(() => initialLayout ? initialLayout.current : wallpapers[0] ?? null)
   const [choosingWallpaper, setChoosingWallpaper] = useState(false)
   const [widgets, setWidgets] = useState(() => initialLayout?.widgets ?? [createWidget()])
   const [now, setNow] = useState(() => new Date())
@@ -79,7 +77,12 @@ export default function App() {
   useEffect(() => {
     let active = true
     galleryStorage().then((saved) => {
-      if (active && Array.isArray(saved?.uploads) && Array.isArray(saved?.hidden)) setGallery(saved)
+      if (active && Array.isArray(saved?.uploads) && Array.isArray(saved?.hidden)) {
+        setGallery({
+          uploads: saved.uploads.filter((image) => typeof image?.id === 'string' && image.id.startsWith('upload:') && typeof image.src === 'string' && image.src.startsWith('data:image/')),
+          hidden: saved.hidden.filter((id) => typeof id === 'string'),
+        })
+      }
     }).catch(() => {
       if (active) setGalleryError('Image storage is unavailable in this browser.')
     }).finally(() => { if (active) setGalleryReady(true) })
@@ -134,7 +137,10 @@ export default function App() {
   }, [current, widgets])
 
   function addWidget() {
-    setWidgets((items) => [...items, createWidget(items.length)])
+    setWidgets((items) => [...items, {
+      ...createWidget(items.length),
+      image: galleryImages[items.length % galleryImages.length]?.id ?? null,
+    }])
     setMenu(null)
   }
 
@@ -151,9 +157,11 @@ export default function App() {
     function dismiss() { setMenu(null) }
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('pointerdown', dismiss)
+    window.addEventListener('resize', dismiss)
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('pointerdown', dismiss)
+      window.removeEventListener('resize', dismiss)
     }
   }, [])
 
@@ -169,12 +177,17 @@ export default function App() {
         })
       }}
     >
-      {wallpaperSrc && <div aria-hidden="true" className="wallpaper__image is-active" key={current} style={{ backgroundImage: `url("${wallpaperSrc}")` }} />}
+      {wallpaperSrc ? (
+        <LoadingImage className="wallpaper__image is-active" src={wallpaperSrc} key={current} />
+      ) : !galleryReady && current?.startsWith('upload:') ? (
+        <div className="wallpaper__image is-active skeleton" aria-label="Loading wallpaper" />
+      ) : null}
       <time className="clock" dateTime={now.toISOString()}>
         {timeFormatter.format(now)}
         <span className="clock__day">{dayFormatter.format(now)}</span>
       </time>
-      {widgets.map((widget, index) => (
+      {/* Stable DOM order preserves pointer capture when a widget is brought forward. */}
+      {[...widgets].sort((a, b) => a.id.localeCompare(b.id)).map((widget) => (
         <PhotoWidget
           key={widget.id}
           image={widget.image}
@@ -184,9 +197,16 @@ export default function App() {
           galleryError={galleryError}
           onUpload={uploadImages}
           onDeleteImage={deleteImage}
-          bounds={widget.bounds}
-          onChange={(changes) => setWidgets((items) => items.map((item) => item.id === widget.id ? { ...item, ...changes } : item))}
-          layer={index + 3}
+          placement={widgetStyle(widget.bounds, widget.viewport)}
+          onChange={(changes) => {
+            const viewport = getViewport()
+            setWidgets((items) => items.map((item) => item.id === widget.id ? {
+              ...item,
+              ...changes,
+              ...(changes.bounds ? { bounds: fitBounds(changes.bounds, viewport.width, viewport.height), viewport } : {}),
+            } : item))
+          }}
+          layer={widgets.findIndex((item) => item.id === widget.id) + 3}
           onAdd={addWidget}
           onRemove={() => setWidgets((items) => items.filter((item) => item.id !== widget.id))}
           onActivate={() => setWidgets((items) => items.at(-1)?.id === widget.id ? items : [...items.filter((item) => item.id !== widget.id), items.find((item) => item.id === widget.id)])}
