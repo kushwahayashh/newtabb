@@ -67,10 +67,12 @@ export default function PhotoWidget({ image, imageSrc, images, galleryReady, gal
     let { left, top } = initial
     let right = left + initial.width
     let bottom = top + initial.height
-    if (direction.includes('w')) left = Math.max(16, Math.min(right - 128, left + dx))
-    if (direction.includes('e')) right = Math.min(window.innerWidth - 16, Math.max(left + 128, right + dx))
-    if (direction.includes('n')) top = Math.max(16, Math.min(bottom - 96, top + dy))
-    if (direction.includes('s')) bottom = Math.min(window.innerHeight - 16, Math.max(top + 96, bottom + dy))
+    const minWidth = Math.min(128, initial.width)
+    const minHeight = Math.min(96, initial.height)
+    if (direction.includes('w')) left = Math.max(16, Math.min(right - minWidth, left + dx))
+    if (direction.includes('e')) right = Math.min(window.innerWidth - 16, Math.max(left + minWidth, right + dx))
+    if (direction.includes('n')) top = Math.max(16, Math.min(bottom - minHeight, top + dy))
+    if (direction.includes('s')) bottom = Math.min(window.innerHeight - 16, Math.max(top + minHeight, bottom + dy))
     onChange({ bounds: { left, top, width: right - left, height: bottom - top } })
   }
 
