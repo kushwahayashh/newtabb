@@ -2,14 +2,10 @@ import { useEffect, useState } from 'react'
 import PhotoWidget from './PhotoWidget.jsx'
 import ImagePicker from './ImagePicker.jsx'
 import { galleryStorage } from './galleryStorage.js'
+import { chooseQuote, rememberQuote } from './quotes.js'
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
 const dayFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'long' })
-const quotes = [
-  { text: 'The only true wisdom is in knowing you know nothing.', author: 'Socrates' },
-  { text: 'Happiness depends upon ourselves.', author: 'Aristotle' },
-  { text: 'He who has a why to live can bear almost any how.', author: 'Friedrich Nietzsche' },
-]
 const imageFiles = import.meta.glob('../images/*.{png,jpg,jpeg,webp,avif}', {
     eager: true,
     query: '?url',
@@ -62,6 +58,7 @@ function createWidget(index = 0) {
 }
 
 export default function App() {
+  const [quote] = useState(chooseQuote)
   const [initialLayout] = useState(restoreLayout)
   const [current, setCurrent] = useState(() => initialLayout?.current ?? wallpapers[0])
   const [choosingWallpaper, setChoosingWallpaper] = useState(false)
@@ -76,7 +73,8 @@ export default function App() {
     ...gallery.uploads,
   ].filter((image) => !gallery.hidden.includes(imageKey(image.id)))
   const wallpaperSrc = galleryImages.find((image) => image.id === current)?.src ?? (current?.startsWith('upload:') ? undefined : current)
-  const quote = quotes[Math.max(0, wallpapers.indexOf(current)) % quotes.length]
+
+  useEffect(() => { rememberQuote(quote) }, [quote])
 
   useEffect(() => {
     let active = true
@@ -200,7 +198,7 @@ export default function App() {
           <button role="menuitem" type="button" onClick={addWidget}>Add photo widget</button>
         </div>
       )}
-      <figure className="quote" key={current}>
+      <figure className="quote">
         <blockquote>“{quote.text}”</blockquote>
         <figcaption>— {quote.author}</figcaption>
       </figure>
