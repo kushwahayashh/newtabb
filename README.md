@@ -3,6 +3,8 @@
 A personal start page with wallpapers, draggable photo widgets, a clock, and quotes.
 Built with React and Vite.
 
+[Try newtabb](https://trynewtabb.vercel.app/)
+
 ![New Tab with a gradient wallpaper and photo widgets](demo.png)
 
 ![New Tab with a blue wallpaper and photo widgets](demo2.png)
