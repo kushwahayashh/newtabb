@@ -7,7 +7,7 @@ import useGallery from './useGallery.js'
 import { chooseQuote, rememberQuote } from './quotes.js'
 import LoadingImage from './LoadingImage.jsx'
 import { fitBounds, getViewport, isViewport, widgetStyle } from './layout.js'
-import { defaultImages, defaultWallpaper, imageKey, restoreImage } from './wallpapers.js'
+import { defaultWallpaper, defaultWidgetImage, imageKey, restoreImage } from './wallpapers.js'
 
 const storageKey = 'newtab-layout-v1'
 
@@ -34,10 +34,10 @@ function restoreLayout() {
   }
 }
 
-function createWidget(index = 0) {
+function createWidget(index = 0, image = defaultWidgetImage) {
   return {
     id: crypto.randomUUID(),
-    image: defaultImages[index % defaultImages.length]?.id ?? null,
+    image,
     viewport: getViewport(),
     bounds: fitBounds({
       width: 240,
@@ -90,10 +90,10 @@ export default function App() {
   }, [current, widgets])
 
   function addWidget() {
-    setWidgets((items) => [...items, {
-      ...createWidget(items.length),
-      image: images[items.length % images.length]?.id ?? null,
-    }])
+    const photo = images.find((image) => image.id === defaultWidgetImage)
+      ?? images.find((image) => image.id !== current)
+      ?? images[0]
+    setWidgets((items) => [...items, createWidget(items.length, photo?.id ?? null)])
     setMenu(null)
   }
 

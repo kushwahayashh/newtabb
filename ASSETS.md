@@ -11,6 +11,10 @@ They are delivered with the app so everyone starts with the same collection.
 | `images/mesh-red-gradient.webp` | `mesh-red-gradient.png` |
 | `images/neon-vocaloid-anime-girl-desktop-wallpaper-4k.webp` | `neon-vocaloid-anime-girl-desktop-wallpaper-4k.jpg` |
 | `images/retro-sunset-drive-vaporwave-cityscape-desktop-wallpaper-4k.webp` | `retro-sunset-drive-vaporwave-cityscape-desktop-wallpaper-4k.jpg` |
+| `images/widget-default.webp` | `jpg.png` |
+
+The additional default widget photo (`widget-default.webp`) was supplied by the
+maintainer for inclusion in the app. It is separate from the default wallpaper.
 
 The original dimensions and artwork have been retained, with lossy WebP encoding
 to reduce download sizes. This format change does not change ownership.
