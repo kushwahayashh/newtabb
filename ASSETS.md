@@ -24,3 +24,11 @@ creator names or license terms have been inferred from filenames.
 Photos uploaded through the app belong to the user or their respective owners.
 They are stored in the user's browser and are not added to this repository or
 uploaded to the hosting provider by the app.
+
+## Favicon
+
+`public/favicon.svg` is an icon from **Solar by 480 Design**, licensed under
+[Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).
+The SVG is used as supplied, without modifications. Its original attribution
+comment is retained in the file. The favicon is not covered by the code's MIT
+license.
