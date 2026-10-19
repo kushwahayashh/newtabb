@@ -1,4 +1,4 @@
-# New Tab
+# newtabb
 
 A personal start page with wallpapers, draggable photo widgets, a clock, and quotes.
 Built with React and Vite.
