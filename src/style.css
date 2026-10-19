@@ -78,15 +78,7 @@ button:focus-visible { outline: 2px solid #c4dcff; outline-offset: 4px; }
 .wallpaper__image {
   position: absolute;
   inset: 0;
-  background-position: center;
-  background-size: cover;
-  opacity: 0;
-  transition: opacity 1.2s ease-in-out;
   animation: soft-reveal 600ms ease both;
-}
-
-.wallpaper__image.is-active {
-  opacity: 1;
 }
 
 .wallpaper::after {
@@ -105,7 +97,6 @@ button:focus-visible { outline: 2px solid #c4dcff; outline-offset: 4px; }
   top: clamp(1.5rem, 5vh, 3rem);
   left: clamp(1.5rem, 5vw, 3rem);
   color: rgb(255 255 255 / 75%);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
   font-size: clamp(2rem, 5vw, 4rem);
   font-weight: 750;
   letter-spacing: -0.085em;
@@ -132,11 +123,6 @@ button:focus-visible { outline: 2px solid #c4dcff; outline-offset: 4px; }
   user-select: none;
   cursor: grab;
   position: absolute;
-  z-index: 2;
-  top: clamp(1.5rem, 5vh, 3rem);
-  right: clamp(1.5rem, 4vw, 2.5rem);
-  width: 15rem;
-  height: 11.25rem;
   border-radius: 1rem;
   box-shadow: 0 12px 36px rgb(0 0 0 / 22%);
   animation: soft-reveal 350ms ease;
@@ -167,7 +153,6 @@ button:focus-visible { outline: 2px solid #c4dcff; outline-offset: 4px; }
   width: 100%;
   height: 100%;
   border-radius: inherit;
-  object-fit: cover;
   pointer-events: none;
   animation: soft-reveal 400ms ease;
 }
@@ -232,7 +217,10 @@ button:focus-visible { outline: 2px solid #c4dcff; outline-offset: 4px; }
   position: fixed;
   z-index: 5;
   display: grid;
-  min-width: 10rem;
+  min-width: min(10rem, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
   gap: 0.2rem;
   padding: 0.35rem;
   border: 1px solid rgb(255 255 255 / 18%);
@@ -279,7 +267,6 @@ button:focus-visible { outline: 2px solid #c4dcff; outline-offset: 4px; }
 
 .quote blockquote {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
   font-size: clamp(0.95rem, 1.5vw, 1.25rem);
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -324,7 +311,6 @@ button:focus-visible { outline: 2px solid #c4dcff; outline-offset: 4px; }
 .image-picker.is-closing::backdrop { animation: soft-dismiss 180ms ease both; }
 .image-picker__item { animation: tile-reveal 350ms ease var(--item-delay, 0ms) both; }
 .image-picker__close,
-.image-picker__delete,
 .image-picker__confirmation button { transition: background 160ms ease, color 160ms ease, scale 160ms ease; }
 .image-picker__close:hover { background: rgb(255 255 255 / 20%); }
 .image-picker__close:active,
@@ -351,8 +337,7 @@ button:focus-visible { outline: 2px solid #c4dcff; outline-offset: 4px; }
   scrollbar-color: #ffffff30 transparent;
   scrollbar-gutter: stable;
 }
-.image-picker__header { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
-.image-picker__header { align-items: center; }
+.image-picker__header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
 .image-picker h2 { margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.03em; }
 .image-picker p { margin: 0.5rem 0 0; font-size: 0.85rem; color: rgb(255 255 255 / 55%); }
 .image-picker__close {
@@ -436,7 +421,6 @@ button:focus-visible { outline: 2px solid #c4dcff; outline-offset: 4px; }
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
-.image-picker__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .image-picker__photo:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgb(0 0 0 / 30%); }
 .image-picker__photo[aria-pressed="true"] { outline: 2px solid white; outline-offset: 3px; }
 .image-picker button:focus-visible { outline: 2px solid #a8caff; outline-offset: 3px; }
@@ -464,12 +448,5 @@ button:focus-visible { outline: 2px solid #c4dcff; outline-offset: 4px; }
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
-  }
-  .wallpaper__image {
-    transition: none;
-  }
-
-  .quote {
-    animation: none;
   }
 }

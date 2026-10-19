@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ImagePicker from './ImagePicker.jsx'
 import LoadingImage from './LoadingImage.jsx'
+import ContextMenu from './ContextMenu.jsx'
 
 export default function PhotoWidget({ image, imageSrc, images, galleryReady, galleryError, onUpload, onDeleteImage, placement, onChange, onAdd, onRemove, onActivate, layer }) {
   const [editing, setEditing] = useState(false)
@@ -27,17 +28,18 @@ export default function PhotoWidget({ image, imageSrc, images, galleryReady, gal
   }, [removing, onRemove])
 
   useEffect(() => {
-    function dismiss(event) {
-      if (event.type === 'pointerdown' || event.key === 'Escape') setMenu(null)
-      if (event.key === 'Escape') setEditing(false)
+    if (!editing) return
+    function finishEditing(event) {
+      if (event.key === 'Escape' && !document.querySelector('dialog[open]')) setEditing(false)
     }
-    window.addEventListener('pointerdown', dismiss)
-    window.addEventListener('keydown', dismiss)
-    return () => {
-      window.removeEventListener('pointerdown', dismiss)
-      window.removeEventListener('keydown', dismiss)
-    }
-  }, [])
+    window.addEventListener('keydown', finishEditing)
+    return () => window.removeEventListener('keydown', finishEditing)
+  }, [editing])
+
+  function stop() {
+    gesture.current = null
+    setInteracting(false)
+  }
 
   function start(event, direction = 'move') {
     if (event.button !== 0) return
@@ -80,20 +82,17 @@ export default function PhotoWidget({ image, imageSrc, images, galleryReady, gal
     <aside
       className={`photo-widget${editing ? ' is-resizable' : ''}${interacting ? ' is-interacting' : ''}${removing ? ' is-removing' : ''}`}
       aria-label="Photo widget"
-      style={{ ...placement, right: 'auto', zIndex: layer }}
+      style={{ ...placement, zIndex: layer }}
       onPointerDown={start}
       onPointerMove={move}
-      onPointerUp={() => { gesture.current = null; setInteracting(false) }}
-      onPointerCancel={() => { gesture.current = null; setInteracting(false) }}
-      onLostPointerCapture={() => { gesture.current = null; setInteracting(false) }}
+      onPointerUp={stop}
+      onPointerCancel={stop}
+      onLostPointerCapture={stop}
       onContextMenu={(event) => {
         event.preventDefault()
         event.stopPropagation()
         onActivate()
-        setMenu({
-          x: Math.max(8, Math.min(event.clientX, window.innerWidth - 200)),
-          y: Math.max(8, Math.min(event.clientY, window.innerHeight - 190)),
-        })
+        setMenu({ x: event.clientX, y: event.clientY })
       }}
     >
       {imageSrc ? (
@@ -122,13 +121,7 @@ export default function PhotoWidget({ image, imageSrc, images, galleryReady, gal
         </>
       )}
       {menu && (
-        <div
-          className="photo-menu"
-          role="menu"
-          style={{ left: menu.x, top: menu.y }}
-          onPointerDown={(event) => event.stopPropagation()}
-          onContextMenu={(event) => { event.preventDefault(); event.stopPropagation() }}
-        >
+        <ContextMenu position={menu} onClose={() => setMenu(null)}>
           <button role="menuitem" type="button" onClick={() => { setEditing(!editing); setMenu(null) }}>
             {editing ? 'Finish resizing' : 'Resize widget'}
           </button>
@@ -136,7 +129,7 @@ export default function PhotoWidget({ image, imageSrc, images, galleryReady, gal
           <div className="photo-menu__divider" />
           <button role="menuitem" type="button" onClick={() => { setMenu(null); onAdd() }}>Add photo widget</button>
           <button className="photo-menu__remove" role="menuitem" type="button" onClick={() => { setMenu(null); setRemoving(true) }}>Remove widget</button>
-        </div>
+        </ContextMenu>
       )}
       {choosingImage && (
         <ImagePicker

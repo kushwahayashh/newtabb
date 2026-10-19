@@ -72,7 +72,7 @@ export default function ImagePicker({ images, selected, onSelect, onClose, onUpl
                 <LoadingImage src={image.src} loading="lazy" />
                 {selected === image.id && <span className="image-picker__check" aria-hidden="true">✓</span>}
               </button>
-              <button className="image-picker__delete" aria-label={`Delete ${image.name || 'photo'}`} disabled={busy || !ready} onClick={() => setDeleting(image)} type="button">
+              <button className="image-picker__delete" aria-label={`Delete ${image.name || 'photo'}`} disabled={busy || !ready || !!deleting} onClick={() => setDeleting(image)} type="button">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7" /></svg>
               </button>
             </div>
